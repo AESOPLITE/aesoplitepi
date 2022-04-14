@@ -7,11 +7,11 @@
 * 
 * Versions:
 * 0.0.0 Initial simple version that runs manually and records to 1 file
-* 0.1.0 Created default data file permissions change
+* 0.1.1 Created default data file permissions change
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 1 //Changes on minor revisions
-#define PATCH_VERSION 0 //Changes on most new compilations while developing
+#define PATCH_VERSION 1 //Changes on most new compilations while developing
 
 #include <errno.h>
 #include <fcntl.h> 
@@ -60,8 +60,9 @@ int main()
 //    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_740302080D143374=if00"; //HWv3DAQ
     char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_0300021216132494-if00"; //test HWv2DAQ
     char *filename = "datatemp.dat";
-    int fdUsb, fdData;
-
+    int fdUsb; 
+    FILE* fpData;
+ 
     fdUsb = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
     if (fdUsb < 0) {
         printf("Error opening %s: %s\n", portName, strerror(errno));
@@ -69,12 +70,12 @@ int main()
     }
     set_default_attribs(fdUsb);
 
-    fdData = open(filename, O_CREAT | O_WRONLY, 0x777);
-    if (fdData < 0) {
+    fpData = fopen(filename, "wb");
+    if (!fpData) {
         printf("Error opening %s: %s\n", filename, strerror(errno));
         return -1;
     }
-    printf("Opened %s: %d\n", filename, fdData);
+    printf("Opened %s: %d\n", filename, fpData);
 
     do {
         unsigned char buf[102];
@@ -88,9 +89,9 @@ int main()
                 printf(" 0x%X", buf[i]);
             }
             printf("\n");
-            wrLen = write(fdData, buf, rdLen);
-            if (wrLen < 0) {
-                printf("Error from write %d: %d: %s\n", fdData, wrLen, strerror(errno));
+            wrLen = fwrite(buf, 1, rdLen, fpData);
+            if (wrLen < rdLen) {
+                printf("Error from write: %d of %d bytes written\n", wrLen, rdLen);
             }
         } else if (rdLen < 0) {
             printf("Error from read: %d: %s\n", rdLen, strerror(errno));
