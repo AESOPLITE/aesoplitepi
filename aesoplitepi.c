@@ -6,10 +6,11 @@
 * Brian Lucas
 * 
 * Versions:
-* 0.0.0 Intial simple version that runs manually and records to 1 file
+* 0.0.0 Initial simple version that runs manually and records to 1 file
+* 0.1.0 Created default data file permissions change
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 0 //Changes on minor revisions
+#define MINOR_VERSION 1 //Changes on minor revisions
 #define PATCH_VERSION 0 //Changes on most new compilations while developing
 
 #include <errno.h>
@@ -68,7 +69,7 @@ int main()
     }
     set_default_attribs(fdUsb);
 
-    fdData = open(filename, O_CREAT | O_WRONLY);
+    fdData = open(filename, O_CREAT | O_WRONLY, 0x777);
     if (fdData < 0) {
         printf("Error opening %s: %s\n", filename, strerror(errno));
         return -1;
