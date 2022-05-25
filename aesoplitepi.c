@@ -6,15 +6,19 @@
 * Brian Lucas
 * 
 * Versions:
-* 0.0.0 Initial simple version that runs manually and records to 1 file
-* 0.1.1 Created default data file permissions change
+* 0.0.x Initial simple version that runs manually and records to 1 file
+* 0.1.x Created default data file permissions change
+* 0.2.x Retries rather than exits after unsuccessful open
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 1 //Changes on minor revisions
-#define PATCH_VERSION 1 //Changes on most new compilations while developing
+#define MINOR_VERSION 2 //Changes on minor revisions
+#define PATCH_VERSION 4 //Changes on most new compilations while developing
+#define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
+
 
 #include <errno.h>
 #include <fcntl.h> 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,42 +66,78 @@ int main()
     char *filename = "datatemp.dat";
     int fdUsb; 
     FILE* fpData;
- 
-    fdUsb = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
-    if (fdUsb < 0) {
-        printf("Error opening %s: %s\n", portName, strerror(errno));
-        return -1;
-    }
-    set_default_attribs(fdUsb);
+    bool isOpenDAQ = false;
+    bool isOpenDataFile = false;
+    uint numReadTO = 0;
 
-    fpData = fopen(filename, "wb");
-    if (!fpData) {
-        printf("Error opening %s: %s\n", filename, strerror(errno));
-        return -1;
-    }
-    printf("Opened %s: %d\n", filename, fpData);
+    do
+    {
 
-    do {
-        unsigned char buf[102];
-        int rdLen, wrLen;
+        fdUsb = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
+        if (fdUsb < 0)
+        {
+            printf("Error opening %s: %s\n", portName, strerror(errno));
+            sleep(1); //sleep for 1 sec to limit the retry rate
+        }
+        else
+        {
+            isOpenDAQ = true;
+            set_default_attribs(fdUsb);
+            numReadTO = 0;
+        }
 
-        rdLen = read(fdUsb, buf, sizeof(buf) - 1);
-        if (rdLen > 0) {
-            unsigned char   *h = buf;
-            printf("Read %d:", rdLen);
-            for (int i = 0; i < rdLen; i++) {
-                printf(" 0x%X", buf[i]);
+        while (isOpenDAQ)
+        {
+
+            if (false == isOpenDataFile)
+            {
+            fpData = fopen(filename, "wb");
+                if (!fpData)
+                {
+                    printf("Error opening %s: %s\n", filename, strerror(errno));
+                }
+                else
+                {
+                    isOpenDataFile = true;
+                    printf("Opened %s: %d\n", filename, fpData);
+                }
             }
-            printf("\n");
-            wrLen = fwrite(buf, 1, rdLen, fpData);
-            if (wrLen < rdLen) {
-                printf("Error from write: %d of %d bytes written\n", wrLen, rdLen);
+            while (isOpenDataFile && isOpenDAQ)
+            {
+                unsigned char buf[102];
+                int rdLen, wrLen;
+
+                rdLen = read(fdUsb, buf, sizeof(buf) - 1);
+                if (rdLen > 0)
+                {
+                    unsigned char *h = buf;
+                    printf("Read %d:", rdLen);
+                    for (int i = 0; i < rdLen; i++)
+                    {
+                        printf(" 0x%X", buf[i]);
+                    }
+                    printf("\n");
+                    wrLen = fwrite(buf, 1, rdLen, fpData);
+                    if (wrLen < rdLen)
+                    {
+                        printf("Error from write: %d of %d bytes written\n", wrLen, rdLen);
+                    }
+                }
+                else if (rdLen < 0)
+                {
+                    printf("Error from read: %d: %s\n", rdLen, strerror(errno));
+                }
+                else
+                {
+                    printf("Timeout from read\n");
+                    numReadTO++;
+                    if (TIMEOUTS_BEFORE_REOPEN <= numReadTO)
+                    {
+                        isOpenDAQ = false;
+                    }
+                }
             }
-        } else if (rdLen < 0) {
-            printf("Error from read: %d: %s\n", rdLen, strerror(errno));
-        } else {  
-            printf("Timeout from read\n");
-        }               
-        
+        }
+        close(fdUsb);
     } while (1);
 }
