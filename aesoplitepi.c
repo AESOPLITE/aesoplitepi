@@ -9,19 +9,24 @@
 * 0.0.x Initial simple version that runs manually and records to 1 file
 * 0.1.x Created default data file permissions change
 * 0.2.x Retries rather than exits after unsuccessful open
+* 0.3.x Simple fixed address udp
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 2 //Changes on minor revisions
-#define PATCH_VERSION 4 //Changes on most new compilations while developing
+#define MINOR_VERSION 3 //Changes on minor revisions
+#define PATCH_VERSION 1 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 
 
+#include <arpa/inet.h> 
 #include <errno.h>
 #include <fcntl.h> 
+#include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h> 
+#include <sys/socket.h> 
 #include <termios.h>
 #include <unistd.h>
 
@@ -64,14 +69,28 @@ int main()
 //    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_740302080D143374=if00"; //HWv3DAQ
     char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_0300021216132494-if00"; //test HWv2DAQ
     char *filename = "datatemp.dat";
-    int fdUsb; 
     FILE* fpData;
+    int fdUsb; 
+    int sockUDP; 
+    struct sockaddr_in sockGSE;
     bool isOpenDAQ = false;
     bool isOpenDataFile = false;
     uint numReadTO = 0;
 
     do
     {
+        if ((sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
+        { 
+            printf("Error opening socket\n"); 
+            exit(EXIT_FAILURE); 
+        } 
+        if (0 == (inet_pton(AF_INET, "10.0.0.223", &(sockGSE.sin_addr)))) 
+        { 
+            printf("Invalid IP\n"); 
+            exit(EXIT_FAILURE); 
+        } 
+        sockGSE.sin_port = htons(2102);
+        sockGSE.sin_family = AF_INET;
 
         fdUsb = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
         if (fdUsb < 0)
@@ -85,6 +104,7 @@ int main()
             set_default_attribs(fdUsb);
             numReadTO = 0;
         }
+
 
         while (isOpenDAQ)
         {
@@ -122,6 +142,7 @@ int main()
                     {
                         printf("Error from write: %d of %d bytes written\n", wrLen, rdLen);
                     }
+                    sendto(sockUDP, (const char *)buf, rdLen, MSG_CONFIRM, (const struct sockaddr *) &sockGSE, sizeof(sockGSE)); 
                 }
                 else if (rdLen < 0)
                 {
