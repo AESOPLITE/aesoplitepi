@@ -13,7 +13,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 3 //Changes on minor revisions
-#define PATCH_VERSION 1 //Changes on most new compilations while developing
+#define PATCH_VERSION 2 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 
 
@@ -66,8 +66,9 @@ int set_default_attribs(int fd)
 
 int main()
 {
-//    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_740302080D143374=if00"; //HWv3DAQ
-    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_0300021216132494-if00"; //test HWv2DAQ
+//    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_740302080D143374-if00"; /HWv3DAQ
+    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_C5030215230A1F04-if00"; //HWv3DAQ flight
+//    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_0300021216132494-if00"; //test HWv2DAQ
     char *filename = "datatemp.dat";
     FILE* fpData;
     int fdUsb; 
@@ -84,7 +85,7 @@ int main()
             printf("Error opening socket\n"); 
             exit(EXIT_FAILURE); 
         } 
-        if (0 == (inet_pton(AF_INET, "10.0.0.223", &(sockGSE.sin_addr)))) 
+        if (0 == (inet_pton(AF_INET, "192.168.1.34", &(sockGSE.sin_addr)))) 
         { 
             printf("Invalid IP\n"); 
             exit(EXIT_FAILURE); 
