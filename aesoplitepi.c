@@ -10,11 +10,14 @@
 * 0.1.x Created default data file permissions change
 * 0.2.x Retries rather than exits after unsuccessful open
 * 0.3.x Simple fixed address udp
+* 0.4.x Add run number parameter
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 3 //Changes on minor revisions
-#define PATCH_VERSION 2 //Changes on most new compilations while developing
+#define MINOR_VERSION 4 //Changes on minor revisions
+#define PATCH_VERSION 14 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
+#define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
+#define PARAM_TOTAL  1   //Number of parameters in file parameter file
 
 
 #include <arpa/inet.h> 
@@ -30,7 +33,33 @@
 #include <termios.h>
 #include <unistd.h>
 
-int set_default_attribs(int fd)
+enum ParamType {RUNNUMBER};
+typedef struct ParameterEntry {
+    char * fileLoc;
+    char fileBuf[PARAM_MAX_LENGTH];
+} ParameterEntry;
+
+int ReadCreateParamFile(ParameterEntry * entry)
+{
+    FILE * fpTmp;
+    if ((fpTmp = fopen(entry->fileLoc, "r")))//try to open parameter file
+    {
+        fgets(entry->fileBuf, PARAM_MAX_LENGTH, fpTmp);
+        fclose(fpTmp);
+        return 1;
+    }
+    else
+    {
+        fpTmp = fopen(entry->fileLoc, "w"); //create the new parameter file
+        fputs(entry->fileBuf, fpTmp);
+        fclose(fpTmp);
+        return 0;
+    }
+
+    return -1;
+}
+
+int SetDefaultAttribs(int fd)
 {
     struct termios tty;
 
@@ -66,18 +95,33 @@ int set_default_attribs(int fd)
 
 int main()
 {
+    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm"};
+    const char * paramFileDefault[PARAM_TOTAL] = {"0"};
+    ParameterEntry params[PARAM_TOTAL];
+    enum ParamType paramIndex;
 //    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_740302080D143374-if00"; /HWv3DAQ
-    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_C5030215230A1F04-if00"; //HWv3DAQ flight
+    char * portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_C5030215230A1F04-if00"; //HWv3DAQ flight
 //    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_0300021216132494-if00"; //test HWv2DAQ
-    char *filename = "datatemp.dat";
-    FILE* fpData;
+    // char * filename = "datatemp.dat";
+    char filename[PARAM_MAX_LENGTH];
+    FILE * fpData;
     int fdUsb; 
     int sockUDP; 
     struct sockaddr_in sockGSE;
     bool isOpenDAQ = false;
     bool isOpenDataFile = false;
     uint numReadTO = 0;
+    uint runNum;
 
+    for (paramIndex = 0; paramIndex < PARAM_TOTAL; paramIndex++)
+    {
+        params[paramIndex].fileLoc = paramFileLocation[paramIndex];
+        strcpy(params[paramIndex].fileBuf, paramFileDefault[paramIndex]);
+
+        ReadCreateParamFile(params + paramIndex);
+    }
+    sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
+    sprintf(filename, "%05u.dat", runNum);
     do
     {
         if ((sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
@@ -102,7 +146,7 @@ int main()
         else
         {
             isOpenDAQ = true;
-            set_default_attribs(fdUsb);
+            SetDefaultAttribs(fdUsb);
             numReadTO = 0;
         }
 
