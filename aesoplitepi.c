@@ -11,10 +11,11 @@
 * 0.2.x Retries rather than exits after unsuccessful open
 * 0.3.x Simple fixed address udp
 * 0.4.x Add run number parameter
+* 0.5.x Increment run number parameter after data file open
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 4 //Changes on minor revisions
-#define PATCH_VERSION 14 //Changes on most new compilations while developing
+#define MINOR_VERSION 5 //Changes on minor revisions
+#define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  1   //Number of parameters in file parameter file
@@ -156,7 +157,7 @@ int main()
 
             if (false == isOpenDataFile)
             {
-            fpData = fopen(filename, "wb");
+            fpData = fopen(filename, "wb");//TODO skip if file exists
                 if (!fpData)
                 {
                     printf("Error opening %s: %s\n", filename, strerror(errno));
@@ -165,6 +166,11 @@ int main()
                 {
                     isOpenDataFile = true;
                     printf("Opened %s: %d\n", filename, fpData);
+                    FILE * fWriteRunNum = fopen(paramFileLocation[RUNNUMBER], "w"); // open to write new runnum TODO error handling
+                    char numStr[6];
+                    sprintf(numStr, "%05u", runNum + 1); //increment in file so next open is new number
+                    fputs(numStr, fWriteRunNum);
+                    fclose(fWriteRunNum);
                 }
             }
             while (isOpenDataFile && isOpenDAQ)
