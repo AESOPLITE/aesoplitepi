@@ -12,13 +12,14 @@
 * 0.3.x Simple fixed address udp
 * 0.4.x Add run number parameter
 * 0.5.x Increment run number parameter after data file open
+* 0.6.x Added param for USB port
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 5 //Changes on minor revisions
-#define PATCH_VERSION 0 //Changes on most new compilations while developing
+#define MINOR_VERSION 6 //Changes on minor revisions
+#define PATCH_VERSION 1 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
-#define PARAM_TOTAL  1   //Number of parameters in file parameter file
+#define PARAM_TOTAL  2   //Number of parameters in file parameter file
 
 
 #include <arpa/inet.h> 
@@ -34,7 +35,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-enum ParamType {RUNNUMBER};
+enum ParamType {RUNNUMBER, USBPORT};
 typedef struct ParameterEntry {
     char * fileLoc;
     char fileBuf[PARAM_MAX_LENGTH];
@@ -96,13 +97,14 @@ int SetDefaultAttribs(int fd)
 
 int main()
 {
-    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm"};
-    const char * paramFileDefault[PARAM_TOTAL] = {"0"};
+    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm"};
+    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ACM0"};
     ParameterEntry params[PARAM_TOTAL];
     enum ParamType paramIndex;
 //    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_740302080D143374-if00"; /HWv3DAQ
-    char * portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_C5030215230A1F04-if00"; //HWv3DAQ flight
+    // char * portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_C5030215230A1F04-if00"; //HWv3DAQ flight
 //    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_0300021216132494-if00"; //test HWv2DAQ
+    char portName[PARAM_MAX_LENGTH];
     // char * filename = "datatemp.dat";
     char filename[PARAM_MAX_LENGTH];
     FILE * fpData;
@@ -122,6 +124,7 @@ int main()
         ReadCreateParamFile(params + paramIndex);
     }
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
+    sscanf(params[USBPORT].fileBuf, "%s", &portName);
     sprintf(filename, "%05u.dat", runNum);
     do
     {
@@ -166,11 +169,11 @@ int main()
                 {
                     isOpenDataFile = true;
                     printf("Opened %s: %d\n", filename, fpData);
-                    FILE * fWriteRunNum = fopen(paramFileLocation[RUNNUMBER], "w"); // open to write new runnum TODO error handling
+                    FILE * fpWriteRunNum = fopen(paramFileLocation[RUNNUMBER], "w"); // open to write new runnum TODO error handling
                     char numStr[6];
                     sprintf(numStr, "%05u", runNum + 1); //increment in file so next open is new number
-                    fputs(numStr, fWriteRunNum);
-                    fclose(fWriteRunNum);
+                    fputs(numStr, fpWriteRunNum);
+                    fclose(fpWriteRunNum);
                 }
             }
             while (isOpenDataFile && isOpenDAQ)
