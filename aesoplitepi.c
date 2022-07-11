@@ -163,6 +163,7 @@ int main()
                     // printf("tok: %s\n", tok); 
                     sscanf(tok, "%[^:]:%u", destIP, &destPort);
                     printf("runNum: %d\n", runNum); //DEBUG
+                    printf("runNum*: %d destPort*: destPort\n", &runNum, &destPort); //DEBUG
                     printf("Opening UDP Socket: %s : %d\n", destIP, destPort); 
                     printf("runNum: %d\n", runNum); //DEBUG
                     if ((destUDP[nDestUDP].sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
