@@ -17,7 +17,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 7 //Changes on minor revisions
-#define PATCH_VERSION 5 //Changes on most new compilations while developing
+#define PATCH_VERSION 6 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -135,14 +135,18 @@ int main()
     }
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
     sprintf(filename, "%05u.dat", runNum);
+                    printf("runNum: %d\n", runNum); //DEBUG
     sscanf(params[USBPORT].fileBuf, "%s", &portName);
     if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
     {
+                    printf("runNum: %d\n", runNum); //DEBUG
+
         char * delim = ",";
         char * tok = strtok(params[DESTUDP].fileBuf, delim);
         bool continueTok = true;
         while (continueTok)
         {
+                    printf("runNum: %d\n", runNum); //DEBUG
             if(NULL != tok)
             {
                 if (SOCKET_MIN_STRING_LENGTH >= strlen(params[DESTUDP].fileBuf))
@@ -154,7 +158,7 @@ int main()
                 {
                     uint16_t destPort;
                     char destIP[IP_MAX_STRING_LENGTH];
-                    printf("tok: %s\n", tok); 
+                    // printf("tok: %s\n", tok); 
                     sscanf(tok, "%[^:]:%u", destIP, &destPort);
                     printf("Opening UDP Socket: %s : %d\n", destIP, destPort); 
                     if ((destUDP[nDestUDP].sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
@@ -184,6 +188,7 @@ int main()
     do
     {
         
+                    printf("runNum: %d\n", runNum); //DEBUG
 
         fdUsb = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
         if (fdUsb < 0)
@@ -201,6 +206,7 @@ int main()
 
         while (isOpenDAQ)
         {
+                    printf("runNum: %d\n", runNum); //DEBUG
 
             if (false == isOpenDataFile)
             {
@@ -211,6 +217,7 @@ int main()
                 }
                 else
                 {
+                    printf("runNum: %d\n", runNum); //DEBUG
                     isOpenDataFile = true;
                     printf("Opened %s: %d\n", filename, fpData);
                     FILE * fpWriteRunNum = fopen(paramFileLocation[RUNNUMBER], "w"); // open to write new runnum TODO error handling
@@ -218,6 +225,7 @@ int main()
                     sprintf(numStr, "%05u", runNum + 1); //increment in file so next open is new number
                     fputs(numStr, fpWriteRunNum);
                     fclose(fpWriteRunNum);
+                    printf("runNum: %d\n", runNum); //DEBUG
                 }
             }
             while (isOpenDataFile && isOpenDAQ)
