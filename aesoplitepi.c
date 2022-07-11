@@ -17,7 +17,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 7 //Changes on minor revisions
-#define PATCH_VERSION 12 //Changes on most new compilations while developing
+#define PATCH_VERSION 13 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -163,7 +163,7 @@ int main()
                         printf("Error opening socket\n"); 
                         exit(EXIT_FAILURE); 
                     } 
-                    if (0 == (inet_pton(AF_INET, "192.168.1.34", &(destUDP[nDestUDP].sockGSE.sin_addr)))) 
+                    if (0 == (inet_pton(AF_INET, destIP, &(destUDP[nDestUDP].sockGSE.sin_addr)))) 
                     { 
                         printf("Invalid IP\n"); 
                         exit(EXIT_FAILURE); 
