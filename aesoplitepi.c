@@ -13,13 +13,17 @@
 * 0.4.x Add run number parameter
 * 0.5.x Increment run number parameter after data file open
 * 0.6.x Added param for USB port
+* 0.7.x Added multiple UDP destinations
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 6 //Changes on minor revisions
-#define PATCH_VERSION 1 //Changes on most new compilations while developing
+#define MINOR_VERSION 7 //Changes on minor revisions
+#define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
-#define PARAM_TOTAL  2   //Number of parameters in file parameter file
+#define PARAM_TOTAL  3   //Number of parameters in file parameter file
+#define DESTINATION_MAX_LENGTH  8   //Max number of UDP destinations
+#define SOCKET_MIN_STRING_LENGTH  9   //Mmin char for a socket style x.x.x.x:p
+#define IP_MAX_STRING_LENGTH  16   //Max char for a IPv4 style x.x.x.x
 
 
 #include <arpa/inet.h> 
@@ -35,11 +39,15 @@
 #include <termios.h>
 #include <unistd.h>
 
-enum ParamType {RUNNUMBER, USBPORT};
+enum ParamType {RUNNUMBER, USBPORT, DESTUDP};
 typedef struct ParameterEntry {
     char * fileLoc;
     char fileBuf[PARAM_MAX_LENGTH];
 } ParameterEntry;
+typedef struct UDPEntry {
+    int sockUDP;
+    struct sockaddr_in sockGSE;
+} UDPEntry;
 
 int ReadCreateParamFile(ParameterEntry * entry)
 {
@@ -97,10 +105,12 @@ int SetDefaultAttribs(int fd)
 
 int main()
 {
-    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm"};
-    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ACM0"};
+    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm","DESTUDP.prm"};
+    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101"};
     ParameterEntry params[PARAM_TOTAL];
     enum ParamType paramIndex;
+    UDPEntry destUDP[DESTINATION_MAX_LENGTH];
+    uint8_t nDestUDP = 0;
 //    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_740302080D143374-if00"; /HWv3DAQ
     // char * portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_C5030215230A1F04-if00"; //HWv3DAQ flight
 //    char *portName = "/dev/serial/by-id/usb-Cypress_Semiconductor_USBUART_0300021216132494-if00"; //test HWv2DAQ
@@ -109,8 +119,8 @@ int main()
     char filename[PARAM_MAX_LENGTH];
     FILE * fpData;
     int fdUsb; 
-    int sockUDP; 
-    struct sockaddr_in sockGSE;
+    // int sockUDP; 
+    // struct sockaddr_in sockGSE;
     bool isOpenDAQ = false;
     bool isOpenDataFile = false;
     uint numReadTO = 0;
@@ -125,21 +135,55 @@ int main()
     }
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
     sscanf(params[USBPORT].fileBuf, "%s", &portName);
+    if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
+    {
+        char * delim = ",";
+        char * tok = strtok(params[DESTUDP].fileBuf, delim);
+        bool continueTok = true;
+        while (continueTok)
+        {
+            if(NULL != tok)
+            {
+                if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
+                {
+                    printf("Error opening socket: %s is too short\n", tok); 
+                    continueTok = false;
+                }
+                else
+                {
+                    uint16_t destPort;
+                    char destIP[IP_MAX_STRING_LENGTH];
+                    sscanf(tok, "%16s:%u", destIP, destPort);
+                    printf("Opening UDP Socket: %s %d\n", destIP, destPort); 
+                    if ((destUDP[nDestUDP].sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
+                    { 
+                        printf("Error opening socket\n"); 
+                        exit(EXIT_FAILURE); 
+                    } 
+                    if (0 == (inet_pton(AF_INET, "192.168.1.34", &(destUDP[nDestUDP].sockGSE.sin_addr)))) 
+                    { 
+                        printf("Invalid IP\n"); 
+                        exit(EXIT_FAILURE); 
+                    } 
+                    destUDP[nDestUDP].sockGSE.sin_port = htons(destPort);
+                    destUDP[nDestUDP].sockGSE.sin_family = AF_INET;
+                    nDestUDP++;
+                    tok =strtok(NULL, delim);
+                }
+            }
+            else
+            {
+                continueTok = false;
+            }
+        }
+        
+    }
+    
+
     sprintf(filename, "%05u.dat", runNum);
     do
     {
-        if ((sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
-        { 
-            printf("Error opening socket\n"); 
-            exit(EXIT_FAILURE); 
-        } 
-        if (0 == (inet_pton(AF_INET, "192.168.1.34", &(sockGSE.sin_addr)))) 
-        { 
-            printf("Invalid IP\n"); 
-            exit(EXIT_FAILURE); 
-        } 
-        sockGSE.sin_port = htons(2102);
-        sockGSE.sin_family = AF_INET;
+        
 
         fdUsb = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
         if (fdUsb < 0)
@@ -196,7 +240,10 @@ int main()
                     {
                         printf("Error from write: %d of %d bytes written\n", wrLen, rdLen);
                     }
-                    sendto(sockUDP, (const char *)buf, rdLen, MSG_CONFIRM, (const struct sockaddr *) &sockGSE, sizeof(sockGSE)); 
+                    for(uint8_t i=0; i < nDestUDP; i++)
+                    {
+                        sendto(destUDP[nDestUDP].sockUDP, (const char *)buf, rdLen, MSG_CONFIRM, (const struct sockaddr *) &destUDP[nDestUDP].sockGSE, sizeof(destUDP[nDestUDP].sockGSE)); 
+                    }
                 }
                 else if (rdLen < 0)
                 {
