@@ -17,7 +17,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 7 //Changes on minor revisions
-#define PATCH_VERSION 8 //Changes on most new compilations while developing
+#define PATCH_VERSION 10 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -124,7 +124,7 @@ int main()
     bool isOpenDAQ = false;
     bool isOpenDataFile = false;
     uint16_t numReadTO = 0;
-    uint16_t runNum;
+    unsigned int runNum;
 
     for (paramIndex = 0; paramIndex < PARAM_TOTAL; paramIndex++)
     {
@@ -136,7 +136,7 @@ int main()
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
     sprintf(filename, "%05u.dat", runNum);
                     printf("runNum: %d\n", runNum); //DEBUG
-    sscanf(params[USBPORT].fileBuf, "%s", &portName);
+    sscanf(params[USBPORT].fileBuf, "%s", portName);
     if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
     {
                     printf("runNum: %d\n", runNum); //DEBUG
@@ -157,7 +157,7 @@ int main()
                 else
                 {
                     printf("runNum: %d\n", runNum); //DEBUG
-                    uint16_t destPort;
+                    unsigned int destPort;
                     char destIP[IP_MAX_STRING_LENGTH];
                     printf("runNum: %d\n", runNum); //DEBUG
                     // printf("tok: %s\n", tok); 
