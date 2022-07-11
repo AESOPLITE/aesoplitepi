@@ -17,7 +17,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 7 //Changes on minor revisions
-#define PATCH_VERSION 0 //Changes on most new compilations while developing
+#define PATCH_VERSION 4 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -144,7 +144,7 @@ int main()
         {
             if(NULL != tok)
             {
-                if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
+                if (SOCKET_MIN_STRING_LENGTH >= strlen(params[DESTUDP].fileBuf))
                 {
                     printf("Error opening socket: %s is too short\n", tok); 
                     continueTok = false;
@@ -153,8 +153,9 @@ int main()
                 {
                     uint16_t destPort;
                     char destIP[IP_MAX_STRING_LENGTH];
-                    sscanf(tok, "%16s:%u", destIP, destPort);
-                    printf("Opening UDP Socket: %s %d\n", destIP, destPort); 
+                    printf("tok: %s\n", tok); 
+                    sscanf(tok, "%[^:]:%u", destIP, &destPort);
+                    printf("Opening UDP Socket: %s : %d\n", destIP, destPort); 
                     if ((destUDP[nDestUDP].sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
                     { 
                         printf("Error opening socket\n"); 
