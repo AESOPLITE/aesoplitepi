@@ -156,6 +156,7 @@ int main()
                 }
                 else
                 {
+                    printf("runNum: %d\n", runNum); //DEBUG
                     uint16_t destPort;
                     char destIP[IP_MAX_STRING_LENGTH];
                     // printf("tok: %s\n", tok); 
@@ -175,6 +176,7 @@ int main()
                     destUDP[nDestUDP].sockGSE.sin_family = AF_INET;
                     nDestUDP++;
                     tok =strtok(NULL, delim);
+                    printf("runNum: %d\n", runNum); //DEBUG
                 }
             }
             else
