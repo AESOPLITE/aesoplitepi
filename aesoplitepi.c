@@ -17,7 +17,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 7 //Changes on minor revisions
-#define PATCH_VERSION 4 //Changes on most new compilations while developing
+#define PATCH_VERSION 5 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -123,8 +123,8 @@ int main()
     // struct sockaddr_in sockGSE;
     bool isOpenDAQ = false;
     bool isOpenDataFile = false;
-    uint numReadTO = 0;
-    uint runNum;
+    uint16_t numReadTO = 0;
+    uint16_t runNum;
 
     for (paramIndex = 0; paramIndex < PARAM_TOTAL; paramIndex++)
     {
@@ -134,6 +134,7 @@ int main()
         ReadCreateParamFile(params + paramIndex);
     }
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
+    sprintf(filename, "%05u.dat", runNum);
     sscanf(params[USBPORT].fileBuf, "%s", &portName);
     if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
     {
@@ -180,8 +181,6 @@ int main()
         
     }
     
-
-    sprintf(filename, "%05u.dat", runNum);
     do
     {
         
@@ -205,7 +204,7 @@ int main()
 
             if (false == isOpenDataFile)
             {
-            fpData = fopen(filename, "wb");//TODO skip if file exists
+                fpData = fopen(filename, "wb");//TODO skip if file exists
                 if (!fpData)
                 {
                     printf("Error opening %s: %s\n", filename, strerror(errno));
@@ -256,6 +255,7 @@ int main()
                     numReadTO++;
                     if (TIMEOUTS_BEFORE_REOPEN <= numReadTO)
                     {
+                        numReadTO = 0;
                         isOpenDAQ = false;
                     }
                 }
