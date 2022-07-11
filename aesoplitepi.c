@@ -161,7 +161,9 @@ int main()
                     char destIP[IP_MAX_STRING_LENGTH];
                     // printf("tok: %s\n", tok); 
                     sscanf(tok, "%[^:]:%u", destIP, &destPort);
+                    printf("runNum: %d\n", runNum); //DEBUG
                     printf("Opening UDP Socket: %s : %d\n", destIP, destPort); 
+                    printf("runNum: %d\n", runNum); //DEBUG
                     if ((destUDP[nDestUDP].sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
                     { 
                         printf("Error opening socket\n"); 
@@ -172,6 +174,7 @@ int main()
                         printf("Invalid IP\n"); 
                         exit(EXIT_FAILURE); 
                     } 
+                    printf("runNum: %d\n", runNum); //DEBUG
                     destUDP[nDestUDP].sockGSE.sin_port = htons(destPort);
                     destUDP[nDestUDP].sockGSE.sin_family = AF_INET;
                     nDestUDP++;
