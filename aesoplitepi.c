@@ -17,7 +17,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 7 //Changes on minor revisions
-#define PATCH_VERSION 7 //Changes on most new compilations while developing
+#define PATCH_VERSION 8 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -163,7 +163,7 @@ int main()
                     // printf("tok: %s\n", tok); 
                     sscanf(tok, "%[^:]:%u", destIP, &destPort);
                     printf("runNum: %d\n", runNum); //DEBUG
-                    printf("runNum*: %d destPort*: destPort\n", &runNum, &destPort); //DEBUG
+                    printf("runNum*: %d destPort*: %d\n", &runNum, &destPort); //DEBUG
                     printf("Opening UDP Socket: %s : %d\n", destIP, destPort); 
                     printf("runNum: %d\n", runNum); //DEBUG
                     if ((destUDP[nDestUDP].sockUDP = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
