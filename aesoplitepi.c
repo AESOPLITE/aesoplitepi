@@ -17,7 +17,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 7 //Changes on minor revisions
-#define PATCH_VERSION 13 //Changes on most new compilations while developing
+#define PATCH_VERSION 15 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -244,7 +244,9 @@ int main()
                     }
                     for(uint8_t i=0; i < nDestUDP; i++)
                     {
-                        sendto(destUDP[nDestUDP].sockUDP, (const char *)buf, rdLen, MSG_CONFIRM, (const struct sockaddr *) &destUDP[nDestUDP].sockGSE, sizeof(destUDP[nDestUDP].sockGSE)); 
+                        int tempUDPSent;
+                        tempUDPSent = sendto(destUDP[i].sockUDP, (const char *)buf, rdLen, MSG_CONFIRM, (const struct sockaddr *) &destUDP[i].sockGSE, sizeof(destUDP[i].sockGSE)); 
+                        // printf("Sent %d bytes to UDP %d\n", tempUDPSent, i);
                     }
                 }
                 else if (rdLen < 0)
