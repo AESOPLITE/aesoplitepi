@@ -18,7 +18,7 @@
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 8 //Changes on minor revisions
-#define PATCH_VERSION 0 //Changes on most new compilations while developing
+#define PATCH_VERSION 2 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
