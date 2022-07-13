@@ -173,7 +173,7 @@ int main()
                         }
                         else 
                         {
-                            printf("Failed to Enable Broadcast for: %s with error: %s\n", tok, stderr(errno));
+                            printf("Failed to Enable Broadcast for: %s with error: %s\n", tok, strerror(errno));
                         }
 
                     }
