@@ -14,10 +14,11 @@
 * 0.5.x Increment run number parameter after data file open
 * 0.6.x Added param for USB port
 * 0.7.x Added multiple UDP destinations
+* 0.8.x Added broadcast address option
 */
 #define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 7 //Changes on minor revisions
-#define PATCH_VERSION 15 //Changes on most new compilations while developing
+#define MINOR_VERSION 8 //Changes on minor revisions
+#define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -163,6 +164,20 @@ int main()
                         printf("Error opening socket\n"); 
                         exit(EXIT_FAILURE); 
                     } 
+                    if (NULL != strstr(tok, "255"))
+                    {
+                        int en = 1;
+                        if(0 == setsockopt(destUDP[nDestUDP].sockUDP, SOL_SOCKET, SO_BROADCAST, &en, sizeof(en)));
+                        {
+                            printf("Enabled Broadcast for: %s\n", tok);
+                        }
+                        else 
+                        {
+                            printf("Failed to Enable Broadcast for: %s with error: %s\n", tok, stderr(errno));
+                        }
+
+                    }
+
                     if (0 == (inet_pton(AF_INET, destIP, &(destUDP[nDestUDP].sockGSE.sin_addr)))) 
                     { 
                         printf("Invalid IP\n"); 
