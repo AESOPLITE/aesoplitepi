@@ -167,7 +167,7 @@ int main()
                     if (NULL != strstr(tok, "255"))
                     {
                         int en = 1;
-                        if(0 == setsockopt(destUDP[nDestUDP].sockUDP, SOL_SOCKET, SO_BROADCAST, &en, sizeof(en)));
+                        if(0 == setsockopt(destUDP[nDestUDP].sockUDP, SOL_SOCKET, SO_BROADCAST, &en, sizeof(en)))
                         {
                             printf("Enabled Broadcast for: %s\n", tok);
                         }
