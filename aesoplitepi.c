@@ -15,10 +15,11 @@
 * 0.6.x Added param for USB port
 * 0.7.x Added multiple UDP destinations
 * 0.8.x Added broadcast address option
+* 1.0.x Changes to stdout for running as a service
 */
-#define MAJOR_VERSION 0 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 8 //Changes on minor revisions
-#define PATCH_VERSION 2 //Changes on most new compilations while developing
+#define MAJOR_VERSION 1 //Changes on major revisions, new tasks and inputs
+#define MINOR_VERSION 0 //Changes on minor revisions
+#define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
 #define PARAM_TOTAL  3   //Number of parameters in file parameter file
@@ -127,6 +128,7 @@ int main()
     uint16_t numReadTO = 0;
     unsigned int runNum;
 
+    printf("AESOPLitePi v%d.%d.%d starting...\n", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
     for (paramIndex = 0; paramIndex < PARAM_TOTAL; paramIndex++)
     {
         params[paramIndex].fileLoc = paramFileLocation[paramIndex];
@@ -246,12 +248,12 @@ int main()
                 if (rdLen > 0)
                 {
                     unsigned char *h = buf;
-                    printf("Read %d:", rdLen);
-                    for (int i = 0; i < rdLen; i++)
-                    {
-                        printf(" 0x%X", buf[i]);
-                    }
-                    printf("\n");
+                    // printf("Read %d:", rdLen);
+                    // for (int i = 0; i < rdLen; i++)
+                    // {
+                    //     printf(" 0x%X", buf[i]);
+                    // }
+                    // printf("\n");
                     wrLen = fwrite(buf, 1, rdLen, fpData);
                     if (wrLen < rdLen)
                     {
