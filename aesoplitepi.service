@@ -1,0 +1,14 @@
+[Unit]
+Description=AESOPLitePi DAQ Record & UDP Send
+After=network.target
+
+[Service]
+ExecStart=/aesoplite/aesoplitepi/aesoplitepi
+WorkingDirectory=/aesoplite/aesoplitepi/
+StandardOutput=journal
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
