@@ -16,15 +16,16 @@
 * 0.7.x Added multiple UDP destinations
 * 0.8.x Added broadcast address option
 * 1.0.x Changes to stdout for running as a service
+* 1.1.x Added file location parameter DATADIR
 */
 #define MAJOR_VERSION 1 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 0 //Changes on minor revisions
+#define MINOR_VERSION 1 //Changes on minor revisions
 #define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
-#define PARAM_TOTAL  3   //Number of parameters in file parameter file
+#define PARAM_TOTAL  4   //Number of parameters in file parameter file
 #define DESTINATION_MAX_LENGTH  8   //Max number of UDP destinations
-#define SOCKET_MIN_STRING_LENGTH  9   //Mmin char for a socket style x.x.x.x:p
+#define SOCKET_MIN_STRING_LENGTH  9   //Min char for a socket style x.x.x.x:p
 #define IP_MAX_STRING_LENGTH  16   //Max char for a IPv4 style x.x.x.x
 
 
@@ -41,7 +42,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-enum ParamType {RUNNUMBER, USBPORT, DESTUDP};
+enum ParamType {RUNNUMBER, USBPORT, DESTUDP, DATADIR};
 typedef struct ParameterEntry {
     char * fileLoc;
     char fileBuf[PARAM_MAX_LENGTH];
@@ -84,7 +85,7 @@ int SetDefaultAttribs(int fd)
     cfsetispeed(&tty, (speed_t)B19200);
 
     tty.c_cflag |= (CS8 | CLOCAL | CREAD);    // 8bit, ignore modem ctrl
-    tty.c_cflag &= ~ (CSIZE | CSTOPB | PARENB | CRTSCTS); //stop bit, no parity, no flowctrl
+    tty.c_cflag &= ~ (CSIZE | CSTOPB | PARENB); //stop bit, no parity, no flowctrl
 
     // setup for raw non-canonical
     tty.c_iflag &= ~(BRKINT | PARMRK | IGNBRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
@@ -107,8 +108,8 @@ int SetDefaultAttribs(int fd)
 
 int main()
 {
-    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm","DESTUDP.prm"};
-    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101"};
+    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm", "DESTUDP.prm", "DATADIR.prm"};
+    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./"};
     ParameterEntry params[PARAM_TOTAL];
     enum ParamType paramIndex;
     UDPEntry destUDP[DESTINATION_MAX_LENGTH];
@@ -137,7 +138,7 @@ int main()
         ReadCreateParamFile(params + paramIndex);
     }
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
-    sprintf(filename, "%05u.dat", runNum);
+    sprintf(filename, "%s%05u.dat", params[DATADIR].fileBuf, runNum);
     sscanf(params[USBPORT].fileBuf, "%s", portName);
     if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
     {
