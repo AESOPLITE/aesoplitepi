@@ -17,9 +17,10 @@
 * 0.8.x Added broadcast address option
 * 1.0.x Changes to stdout for running as a service
 * 1.1.x Added file location parameter DATADIR
+* 1.2.x Added Date & Time to filename
 */
 #define MAJOR_VERSION 1 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 1 //Changes on minor revisions
+#define MINOR_VERSION 2 //Changes on minor revisions
 #define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
@@ -27,6 +28,7 @@
 #define DESTINATION_MAX_LENGTH  8   //Max number of UDP destinations
 #define SOCKET_MIN_STRING_LENGTH  9   //Min char for a socket style x.x.x.x:p
 #define IP_MAX_STRING_LENGTH  16   //Max char for a IPv4 style x.x.x.x
+#define MAX_FILE_TIMES  1   //Max number of File open times to keep
 
 
 #include <arpa/inet.h> 
@@ -40,6 +42,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h> 
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 
 enum ParamType {RUNNUMBER, USBPORT, DESTUDP, DATADIR};
@@ -128,6 +131,8 @@ int main()
     bool isOpenDataFile = false;
     uint16_t numReadTO = 0;
     unsigned int runNum;
+    time_t fileTimes[MAX_FILE_TIMES];
+    uint8_t iFileTimes = 0;
 
     printf("AESOPLitePi v%d.%d.%d starting...\n", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
     for (paramIndex = 0; paramIndex < PARAM_TOTAL; paramIndex++)
@@ -138,7 +143,7 @@ int main()
         ReadCreateParamFile(params + paramIndex);
     }
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
-    sprintf(filename, "%s%05u.dat", params[DATADIR].fileBuf, runNum);
+    // sprintf(filename, "%s%05u.dat", params[DATADIR].fileBuf, runNum);
     sscanf(params[USBPORT].fileBuf, "%s", portName);
     if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
     {
@@ -224,6 +229,11 @@ int main()
 
             if (false == isOpenDataFile)
             {
+                time(fileTimes + iFileTimes); //update file time
+                struct tm* curFileTime = gmtime(fileTimes + iFileTimes);
+                char formatTimeStr[20];
+                strftime(formatTimeStr, 19, "_%Y-%m-%d_%H-%M", curFileTime);
+                sprintf(filename, "%s%05u%s.dat", params[DATADIR].fileBuf, runNum, formatTimeStr);
                 fpData = fopen(filename, "wb");//TODO skip if file exists
                 if (!fpData)
                 {
@@ -248,7 +258,7 @@ int main()
                 rdLen = read(fdUsb, buf, sizeof(buf) - 1);
                 if (rdLen > 0)
                 {
-                    unsigned char *h = buf;
+                    // unsigned char *h = buf;
                     // printf("Read %d:", rdLen);
                     // for (int i = 0; i < rdLen; i++)
                     // {
