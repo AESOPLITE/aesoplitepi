@@ -1,6 +1,7 @@
 /* ===========================================================================
 * aesoplitepi
 * Service for data raspberry pi to connect to AESOPLite DAQ Board via USB-UART
+* record the data to file and send it to GSE computers via UDP
 * 
 * Auhor:
 * Brian Lucas
@@ -18,17 +19,18 @@
 * 1.0.x Changes to stdout for running as a service
 * 1.1.x Added file location parameter DATADIR
 * 1.2.x Added Date & Time to filename
+* 2.0.x Added functionality to open new files based on a minutes parameter
 */
-#define MAJOR_VERSION 1 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 2 //Changes on minor revisions
+#define MAJOR_VERSION 2 //Changes on major revisions, new tasks and inputs
+#define MINOR_VERSION 0 //Changes on minor revisions
 #define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
-#define PARAM_TOTAL  4   //Number of parameters in file parameter file
+#define PARAM_TOTAL  5   //Number of parameters in file parameter file
 #define DESTINATION_MAX_LENGTH  8   //Max number of UDP destinations
 #define SOCKET_MIN_STRING_LENGTH  9   //Min char for a socket style x.x.x.x:p
 #define IP_MAX_STRING_LENGTH  16   //Max char for a IPv4 style x.x.x.x
-#define MAX_FILE_TIMES  1   //Max number of File open times to keep
+#define MAX_FILE_TIMES  2   //Max number of File open times to keep
 
 
 #include <arpa/inet.h> 
@@ -45,7 +47,7 @@
 #include <time.h>
 #include <unistd.h>
 
-enum ParamType {RUNNUMBER, USBPORT, DESTUDP, DATADIR};
+enum ParamType {RUNNUMBER, USBPORT, DESTUDP, DATADIR, MINSNEWFILE};
 typedef struct ParameterEntry {
     char * fileLoc;
     char fileBuf[PARAM_MAX_LENGTH];
@@ -111,8 +113,8 @@ int SetDefaultAttribs(int fd)
 
 int main()
 {
-    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm", "DESTUDP.prm", "DATADIR.prm"};
-    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./"};
+    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm", "DESTUDP.prm", "DATADIR.prm", "MINSNEWFILE.prm"};
+    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./", "60"};
     ParameterEntry params[PARAM_TOTAL];
     enum ParamType paramIndex;
     UDPEntry destUDP[DESTINATION_MAX_LENGTH];
@@ -133,6 +135,7 @@ int main()
     unsigned int runNum;
     time_t fileTimes[MAX_FILE_TIMES];
     uint8_t iFileTimes = 0;
+    unsigned int minutesNewFile;
 
     printf("AESOPLitePi v%d.%d.%d starting...\n", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
     for (paramIndex = 0; paramIndex < PARAM_TOTAL; paramIndex++)
@@ -145,6 +148,7 @@ int main()
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
     // sprintf(filename, "%s%05u.dat", params[DATADIR].fileBuf, runNum);
     sscanf(params[USBPORT].fileBuf, "%s", portName);
+    sscanf(params[MINSNEWFILE].fileBuf, "%u", &minutesNewFile);
     if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
     {
 
@@ -242,6 +246,7 @@ int main()
                 else
                 {
                     isOpenDataFile = true;
+                    iFileTimes = (iFileTimes + 1) % MAX_FILE_TIMES;
                     printf("Opened %s: %d\n", filename, fpData);
                     FILE * fpWriteRunNum = fopen(paramFileLocation[RUNNUMBER], "w"); // open to write new runnum TODO error handling
                     char numStr[6];
@@ -291,8 +296,17 @@ int main()
                         isOpenDAQ = false;
                     }
                 }
+                time(fileTimes + iFileTimes); //update file time
+                double curFileSecs = difftime(fileTimes[iFileTimes], fileTimes[((MAX_FILE_TIMES - 1) + iFileTimes) % MAX_FILE_TIMES]);
+                if(((unsigned int)curFileSecs) >= (minutesNewFile * 60)) //check if time has elapsed for new file
+                {
+                    runNum++;
+                    fclose(fpData);
+                    isOpenDataFile = false;
+                }
             }
         }
         close(fdUsb);
     } while (1);
+    return EXIT_FAILURE;
 }
