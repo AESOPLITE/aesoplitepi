@@ -20,13 +20,14 @@
 * 1.1.x Added file location parameter DATADIR
 * 1.2.x Added Date & Time to filename
 * 2.0.x Added functionality to open new files based on a minutes parameter
+* 2.1.x Added file name formating parameter FORMATFILE
 */
 #define MAJOR_VERSION 2 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 0 //Changes on minor revisions
+#define MINOR_VERSION 1 //Changes on minor revisions
 #define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
-#define PARAM_MAX_LENGTH  254   //Max to read from each parameter file
-#define PARAM_TOTAL  5   //Number of parameters in file parameter file
+#define PARAM_MAX_LENGTH  255   //Max to read from each parameter file
+#define PARAM_TOTAL  6   //Number of parameters in parameter files
 #define DESTINATION_MAX_LENGTH  8   //Max number of UDP destinations
 #define SOCKET_MIN_STRING_LENGTH  9   //Min char for a socket style x.x.x.x:p
 #define IP_MAX_STRING_LENGTH  16   //Max char for a IPv4 style x.x.x.x
@@ -47,7 +48,7 @@
 #include <time.h>
 #include <unistd.h>
 
-enum ParamType {RUNNUMBER, USBPORT, DESTUDP, DATADIR, MINSNEWFILE};
+enum ParamType {RUNNUMBER, USBPORT, DESTUDP, DATADIR, MINSNEWFILE, FORMATFILE};
 typedef struct ParameterEntry {
     char * fileLoc;
     char fileBuf[PARAM_MAX_LENGTH];
@@ -113,8 +114,8 @@ int SetDefaultAttribs(int fd)
 
 int main()
 {
-    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm", "DESTUDP.prm", "DATADIR.prm", "MINSNEWFILE.prm"};
-    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./", "60"};
+    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm", "DESTUDP.prm", "DATADIR.prm", "MINSNEWFILE.prm", "FORMATFILE.prm"};
+    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./", "60", "%sAL%05u%s.dat"};
     ParameterEntry params[PARAM_TOTAL];
     enum ParamType paramIndex;
     UDPEntry destUDP[DESTINATION_MAX_LENGTH];
@@ -147,7 +148,7 @@ int main()
     }
     sscanf(params[RUNNUMBER].fileBuf, "%u", &runNum);
     // sprintf(filename, "%s%05u.dat", params[DATADIR].fileBuf, runNum);
-    sscanf(params[USBPORT].fileBuf, "%s", portName);
+    sscanf(params[USBPORT].fileBuf, "%s", portName); //TODO replace portnme
     sscanf(params[MINSNEWFILE].fileBuf, "%u", &minutesNewFile);
     if (SOCKET_MIN_STRING_LENGTH <= strlen(params[DESTUDP].fileBuf))
     {
@@ -235,9 +236,9 @@ int main()
             {
                 time(fileTimes + iFileTimes); //update file time
                 struct tm* curFileTime = gmtime(fileTimes + iFileTimes);
-                char formatTimeStr[20];
-                strftime(formatTimeStr, 19, "_%Y-%m-%d_%H-%M", curFileTime);
-                sprintf(filename, "%s%05u%s.dat", params[DATADIR].fileBuf, runNum, formatTimeStr);
+                char formatTimeStr[PARAM_MAX_LENGTH];
+                strftime(formatTimeStr, PARAM_MAX_LENGTH - 1, "_%Y-%m-%d_%H-%M", curFileTime);
+                sprintf(filename, params[FORMATFILE].fileBuf, params[DATADIR].fileBuf, runNum, formatTimeStr);
                 fpData = fopen(filename, "wb");//TODO skip if file exists
                 if (!fpData)
                 {
