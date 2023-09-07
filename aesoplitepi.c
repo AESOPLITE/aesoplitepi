@@ -21,13 +21,14 @@
 * 1.2.x Added Date & Time to filename
 * 2.0.x Added functionality to open new files based on a minutes parameter
 * 2.1.x Added file name formating parameter FORMATFILE
+* 2.2.x Added file name timestamp formatting parameter FORMATTIME
 */
 #define MAJOR_VERSION 2 //Changes on major revisions, new tasks and inputs
-#define MINOR_VERSION 1 //Changes on minor revisions
+#define MINOR_VERSION 2 //Changes on minor revisions
 #define PATCH_VERSION 0 //Changes on most new compilations while developing
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  255   //Max to read from each parameter file
-#define PARAM_TOTAL  6   //Number of parameters in parameter files
+#define PARAM_TOTAL  7   //Number of parameters in parameter files
 #define DESTINATION_MAX_LENGTH  8   //Max number of UDP destinations
 #define SOCKET_MIN_STRING_LENGTH  9   //Min char for a socket style x.x.x.x:p
 #define IP_MAX_STRING_LENGTH  16   //Max char for a IPv4 style x.x.x.x
@@ -48,7 +49,7 @@
 #include <time.h>
 #include <unistd.h>
 
-enum ParamType {RUNNUMBER, USBPORT, DESTUDP, DATADIR, MINSNEWFILE, FORMATFILE};
+enum ParamType {RUNNUMBER, USBPORT, DESTUDP, DATADIR, MINSNEWFILE, FORMATFILE, FORMATTIME};
 typedef struct ParameterEntry {
     char * fileLoc;
     char fileBuf[PARAM_MAX_LENGTH];
@@ -114,8 +115,8 @@ int SetDefaultAttribs(int fd)
 
 int main()
 {
-    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm", "DESTUDP.prm", "DATADIR.prm", "MINSNEWFILE.prm", "FORMATFILE.prm"};
-    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./", "60", "%sAL%05u%s.dat"};
+    const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm", "DESTUDP.prm", "DATADIR.prm", "MINSNEWFILE.prm", "FORMATFILE.prm", "FORMATTIME.prm"};
+    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./", "60", "%sAL%05u%s.dat", "_%Y-%m-%d_%H-%M"};
     ParameterEntry params[PARAM_TOTAL];
     enum ParamType paramIndex;
     UDPEntry destUDP[DESTINATION_MAX_LENGTH];
@@ -237,7 +238,7 @@ int main()
                 time(fileTimes + iFileTimes); //update file time
                 struct tm* curFileTime = gmtime(fileTimes + iFileTimes);
                 char formatTimeStr[PARAM_MAX_LENGTH];
-                strftime(formatTimeStr, PARAM_MAX_LENGTH - 1, "_%Y-%m-%d_%H-%M", curFileTime);
+                strftime(formatTimeStr, PARAM_MAX_LENGTH - 1, params[FORMATTIME].fileBuf, curFileTime);
                 sprintf(filename, params[FORMATFILE].fileBuf, params[DATADIR].fileBuf, runNum, formatTimeStr);
                 fpData = fopen(filename, "wb");//TODO skip if file exists
                 if (!fpData)
