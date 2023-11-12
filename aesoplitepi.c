@@ -22,11 +22,12 @@
 * 2.0.x Added functionality to open new files based on a minutes parameter
 * 2.1.x Added file name formating parameter FORMATFILE
 * 2.2.x Added file name timestamp formatting parameter FORMATTIME
-* 3.0.x Added minimun UDP size parameter MINUDP
+* 3.0.0 Added minimun UDP size parameter MINUDP
+* 3.0.1 Removed the debug delays used for testing without instrument
 */
 #define MAJOR_VERSION 3 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 0 //Changes on minor revisions
-#define PATCH_VERSION 0 //Changes with fixes on the same feature set
+#define PATCH_VERSION 1 //Changes with fixes on the same feature set
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  255   //Max to read from each parameter file
 #define PARAM_TOTAL  8   //Number of parameters in parameter files
@@ -330,7 +331,6 @@ int main()
                                 // printf("Sent %d bytes to UDP %d\n", tempUDPSent, i);
                                 // printf("Index %d new read %d over %d sent to dest %d\n", iBuf,  rdLen, minUDPsize, i);
                             }
-                            usleep(iBuf * 520); //DEBUG delay for UDP ordering with file input 
                             iBuf = 0;
                         }
                     }
@@ -367,7 +367,6 @@ int main()
                     // printf("Sent %d leftover bytes to UDP %d\n", tempUDPSent, i);
                 }
 
-                usleep(iBuf * 520); //DEBUG delay for UDP ordering with file input 
 
                 rdLen = 0;
                 iBuf = 0;
