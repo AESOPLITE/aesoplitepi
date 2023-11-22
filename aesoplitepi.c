@@ -24,10 +24,11 @@
 * 2.2.x Added file name timestamp formatting parameter FORMATTIME
 * 3.0.0 Added minimun UDP size parameter MINUDP
 * 3.0.1 Removed the debug delays used for testing without instrument
+* 4.0.0 Change baudrate to 115200 in cfsetospeed & cfsetispeed
 */
-#define MAJOR_VERSION 3 //Changes on major revisions, new tasks and inputs
+#define MAJOR_VERSION 4 //Changes on major revisions, new tasks and inputs
 #define MINOR_VERSION 0 //Changes on minor revisions
-#define PATCH_VERSION 1 //Changes with fixes on the same feature set
+#define PATCH_VERSION 0 //Changes with fixes on the same feature set
 #define TIMEOUTS_BEFORE_REOPEN 10 //Number of timeouts before closing and reopen
 #define PARAM_MAX_LENGTH  255   //Max to read from each parameter file
 #define PARAM_TOTAL  8   //Number of parameters in parameter files
@@ -91,8 +92,10 @@ int SetDefaultAttribs(int fd)
         return -1;
     }
 
-    cfsetospeed(&tty, (speed_t)B19200);
-    cfsetispeed(&tty, (speed_t)B19200);
+    // cfsetospeed(&tty, (speed_t)B19200);
+    // cfsetispeed(&tty, (speed_t)B19200);
+    cfsetospeed(&tty, (speed_t)B115200); //set baud to 115200
+    cfsetispeed(&tty, (speed_t)B115200); //set baud to 115200
 
     tty.c_cflag |= (CS8 | CLOCAL | CREAD);    // 8bit, ignore modem ctrl
     tty.c_cflag &= ~ (CSIZE | CSTOPB | PARENB); //stop bit, no parity, no flowctrl
@@ -119,7 +122,7 @@ int SetDefaultAttribs(int fd)
 int main()
 {
     const char * paramFileLocation[PARAM_TOTAL] = {"RUNNUMBER.prm", "USBPORT.prm", "DESTUDP.prm", "DATADIR.prm", "MINSNEWFILE.prm", "FORMATFILE.prm", "FORMATTIME.prm", "MINUDP.prm"};
-    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./", "60", "%sAL%05u%s.dat", "_%Y-%m-%d_%H-%M", "340"};
+    const char * paramFileDefault[PARAM_TOTAL] = {"0", "/dev/ttyACM0", "127.0.0.1:2102,127.0.0.1:2101","./", "60", "%sALpi%05u%s.dat", "_%Y-%m-%d_%H-%M", "340"};
     ParameterEntry params[PARAM_TOTAL];
     enum ParamType paramIndex;
     UDPEntry destUDP[DESTINATION_MAX_LENGTH];
